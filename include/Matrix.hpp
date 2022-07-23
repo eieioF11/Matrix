@@ -9,7 +9,7 @@
 #include <vector>
 #include <tuple>
 #include <cmath>
-#include <float.h>
+
 class Matrix
 {
     private:
@@ -19,13 +19,15 @@ class Matrix
         std::vector<double> get_column(std::vector<std::vector<double>> x,int n);
         double dot(std::vector<double> x, std::vector<double> y);//内積
         std::vector<double> div(std::vector<double> x, double y);//各要素の除算
+        // ハウスホルダー変換
         std::tuple<std::vector<std::vector<double>>, std::vector<double>,  std::vector<double>> tridiagonalize(std::vector<std::vector<double>> a, std::vector<double> d, std::vector<double> e);
+        // QR分解
         std::tuple<std::vector<std::vector<double>>, std::vector<double>,  std::vector<double>> decomp(std::vector<std::vector<double>> a, std::vector<double> d, std::vector<double> e);
     public:
-        Matrix(int n);
-        Matrix(std::vector<std::vector<double>> data);
-        void add_value(int i,int j,double value);
-        double get_value(int i,int j);
+        Matrix(int n);//要素0で初期化
+        Matrix(std::vector<std::vector<double>> data);//要素をdataの値で初期化
+        void add_value(int i,int j,double value);//i行j列にvalueを代入
+        double get_value(int i,int j);//i行j列のデータ抜き出し
         Matrix& operator = (std::vector<std::vector<double>> val){this->data=val;return *this;};
         Matrix& operator = (Matrix val){this->data=val;return *this;};
         //行列演算
@@ -34,12 +36,12 @@ class Matrix
         friend std::vector<double> operator * (Matrix x,std::vector<double> vec);//ベクトルとの積
         Matrix inv();//逆行列
         double det();//行列式
-        std::tuple<Matrix,Matrix> culc_eigen();//固有値,固有ベクトルの計算
+        std::tuple<Matrix,Matrix> culc_eigen();//固有値,固有ベクトルの計算 tupleで対角成分が固有値の行列と固有ベクトルを列ベクトルにした行列を返す
         //値取得
         operator std::vector<std::vector<double>>(){return data;};
-        std::vector<double> get_row(int row);
-        std::vector<double> get_line(int line);
-        void show();
+        std::vector<double> get_row(int row);//行の抜き出し
+        std::vector<double> get_line(int line);//列の抜き出し
+        void show();//行列の表示
         void show(std::vector<std::vector<double>> a);
 };
 //初期化部分
@@ -164,26 +166,26 @@ Matrix Matrix::inv()//逆行列
 }
 double Matrix::det()//行列式
 {
-  std::vector<std::vector<double>> A(this->data.size(), std::vector<double>(this->data[0].size()));
-  A = this->data;
-  int n=A.size();
-  if(n==1)
-    return A[0][0];
-  else if(n==2)
-    return A[0][0] * A[1][1] - A[0][1] * A[1][0]; //要素数２までは簡単なので直接計算
+    std::vector<std::vector<double>> A(this->data.size(), std::vector<double>(this->data[0].size()));
+    A = this->data;
+    int n=A.size();
+    if(n==1)
+        return A[0][0];
+    else if(n==2)
+        return A[0][0] * A[1][1] - A[0][1] * A[1][0]; //要素数２までは簡単なので直接計算
 
-  //0行目で余因子展開
-  int sum = 0;
-  for(int i=0;i<n;i++){ //A[0][i]で余因子展開する
-    std::vector<std::vector<double>> B(A.size(), std::vector<double>(A[0].size()));
-    B = A;
-    for(int j=0;j<n;j++){
-      B[j].erase(B[j].begin()+i);//B[j][i]を消す
+    //0行目で余因子展開
+    int sum = 0;
+    for(int i=0;i<n;i++){ //A[0][i]で余因子展開する
+        std::vector<std::vector<double>> B(A.size(), std::vector<double>(A[0].size()));
+        B = A;
+        for(int j=0;j<n;j++){
+        B[j].erase(B[j].begin()+i);//B[j][i]を消す
+        }
+        B.erase(B.begin()); //0行目は最後に消す
+        sum += A[0][i] * pow(-1,i+2) * ((Matrix)B).det(); //Bが余因子行列になっている
     }
-    B.erase(B.begin()); //0行目は最後に消す
-    sum += A[0][i] * pow(-1,i+2) * ((Matrix)B).det(); //Bが余因子行列になっている
-  }
-  return sum;
+    return sum;
 }
 // ハウスホルダー変換
 std::tuple<std::vector<std::vector<double>>, std::vector<double>,  std::vector<double>> Matrix::tridiagonalize(std::vector<std::vector<double>> a, std::vector<double> d, std::vector<double> e)

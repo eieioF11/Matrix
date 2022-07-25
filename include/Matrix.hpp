@@ -38,6 +38,7 @@ class Matrix
         friend std::vector<double> operator * (Matrix x,std::vector<double> vec);//ベクトルとの積
         Matrix inv();//逆行列
         long double det();//行列式
+        long double det_();//行列式
         std::tuple<Matrix,Matrix> crout();//LU分解 <L,R>
         std::tuple<Matrix,Matrix> culc_eigen();//固有値,固有ベクトルの計算 tupleで対角成分が固有値の行列と固有ベクトルを列ベクトルにした行列を返す
         //値取得
@@ -203,6 +204,32 @@ long double Matrix::det()//行列式
     for(int i=0;i<n;i++)
         det*=A[i][i];
     return det;
+}
+long double Matrix::det_()//行列式
+{
+    std::vector<std::vector<double>> A(this->data.size(), std::vector<double>(this->data[0].size()));
+    A=this->data;
+    int n=A.size();
+    if(n==1)
+        return A[0][0];
+    else if(n==2)
+        return A[0][0] * A[1][1] - A[0][1] * A[1][0];
+    else if(n==3)
+        return A[0][0] * A[1][1] * A[2][2] + A[0][1] * A[1][2] * A[2][0] + A[0][2] * A[1][0] * A[2][1]
+            - A[0][2] * A[1][1] * A[2][0] - A[0][1] * A[1][0] * A[2][2] - A[0][0] * A[1][2] * A[2][1];
+
+    //0行目で余因子展開
+    int sum = 0;
+    for(int i=0;i<n;i++){ //A[0][i]で余因子展開する
+        std::vector<std::vector<double>> B(A.size(), std::vector<double>(A[0].size()));
+        B = A;
+        for(int j=0;j<n;j++){
+        B[j].erase(B[j].begin()+i);//B[j][i]を消す
+        }
+        B.erase(B.begin()); //0行目は最後に消す
+        sum += A[0][i] * pow(-1,i+2) * ((Matrix)B).det(); //Bが余因子行列になっている
+    }
+    return sum;
 }
 //分解LR
 std::tuple<Matrix,Matrix> Matrix::crout(std::vector<std::vector<double>> a)

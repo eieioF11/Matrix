@@ -9,6 +9,7 @@
 #include <vector>
 #include <tuple>
 #include <cmath>
+#include <float.h>
 
 class Matrix
 {
@@ -19,6 +20,8 @@ class Matrix
         std::vector<double> get_column(std::vector<std::vector<double>> x,int n);
         double dot(std::vector<double> x, std::vector<double> y);//内積
         std::vector<double> div(std::vector<double> x, double y);//各要素の除算
+        //LR
+        std::tuple<Matrix,Matrix> crout(std::vector<std::vector<double>> a);
         // ハウスホルダー変換
         std::tuple<std::vector<std::vector<double>>, std::vector<double>,  std::vector<double>> tridiagonalize(std::vector<std::vector<double>> a, std::vector<double> d, std::vector<double> e);
         // QR分解
@@ -35,7 +38,8 @@ class Matrix
         Matrix operator * (Matrix x);//積
         friend std::vector<double> operator * (Matrix x,std::vector<double> vec);//ベクトルとの積
         Matrix inv();//逆行列
-        double det();//行列式
+        long double det();//行列式
+        std::tuple<Matrix,Matrix> crout();//LU分解 <L,R>
         std::tuple<Matrix,Matrix> culc_eigen();//固有値,固有ベクトルの計算 tupleで対角成分が固有値の行列と固有ベクトルを列ベクトルにした行列を返す
         //値取得
         operator std::vector<std::vector<double>>(){return data;};
@@ -139,8 +143,8 @@ Matrix Matrix::inv()//逆行列
     {
         for(int j=0;j<n;j++)
         {
-        A[i][j] = data[i][j]; //Aの前半列にはオブジェクトの行列を格納
-        A[i][j+n] = (i==j)? 1:0; //Aの後半列には単位行列を格納
+            A[i][j] = data[i][j]; //Aの前半列にはオブジェクトの行列を格納
+            A[i][j+n] = (i==j)? 1:0; //Aの後半列には単位行列を格納
         }
     }
 
@@ -149,11 +153,11 @@ Matrix Matrix::inv()//逆行列
         A[i] = div(A[i],A[i][i]); //Aのi行目についてA[i][i]の値で割る
         for(int j=0;j<n;j++)
         {
-        if(i==j)
-            continue;
-        double t = A[j][i];
-        for(int k=0;k<n*2;k++)
-            A[j][k] = A[j][k] - A[i][k] * t; //Aのj行目についてA[j][i]=0となるようにAのi行目の定数倍を引く
+            if(i==j)
+                continue;
+            double t = A[j][i];
+            for(int k=0;k<n*2;k++)
+                A[j][k] = A[j][k] - A[i][k] * t; //Aのj行目についてA[j][i]=0となるようにAのi行目の定数倍を引く
         }
     }
     //この時点でAの前半は単位行列になっている
@@ -164,28 +168,85 @@ Matrix Matrix::inv()//逆行列
 
     return (Matrix)B;
 }
-double Matrix::det()//行列式
+long double Matrix::det()//行列式
 {
     std::vector<std::vector<double>> A(this->data.size(), std::vector<double>(this->data[0].size()));
-    A = this->data;
+    A=this->data;
     int n=A.size();
     if(n==1)
         return A[0][0];
     else if(n==2)
-        return A[0][0] * A[1][1] - A[0][1] * A[1][0]; //要素数２までは簡単なので直接計算
+        return A[0][0] * A[1][1] - A[0][1] * A[1][0];
+    else if(n==3)
+        return A[0][0] * A[1][1] * A[2][2] + A[0][1] * A[1][2] * A[2][0] + A[0][2] * A[1][0] * A[2][1]
+            - A[0][2] * A[1][1] * A[2][0] - A[0][1] * A[1][0] * A[2][2] - A[0][0] * A[1][2] * A[2][1];
 
-    //0行目で余因子展開
-    int sum = 0;
-    for(int i=0;i<n;i++){ //A[0][i]で余因子展開する
-        std::vector<std::vector<double>> B(A.size(), std::vector<double>(A[0].size()));
-        B = A;
-        for(int j=0;j<n;j++){
-        B[j].erase(B[j].begin()+i);//B[j][i]を消す
+    //三角行列を作成
+    for(int i=0;i<n;i++)
+    {
+        for(int j=0;j<n;j++)
+        {
+            if(i<j)
+            {
+                double buf;
+                if(A[i][i]!=0)
+                    buf=A[j][i]/A[i][i];
+                else
+                    buf=A[j][i]/DBL_MAX;
+                for(int k=0;k<n;k++)
+                    A[j][k]-=A[i][k]*buf;
+            }
         }
-        B.erase(B.begin()); //0行目は最後に消す
-        sum += A[0][i] * pow(-1,i+2) * ((Matrix)B).det(); //Bが余因子行列になっている
     }
-    return sum;
+    
+    //対角部分の積
+    long double det=1.0;
+    for(int i=0;i<n;i++)
+        det*=A[i][i];
+    return det;
+}
+//分解LR
+std::tuple<Matrix,Matrix> Matrix::crout(std::vector<std::vector<double>> a)
+{
+    
+    const int N = a.size();
+    Matrix L(N);
+    Matrix R(N);
+    L.add_value(0,0,1.0);
+    R.add_value(0,0,a[0][0]);
+    for(int j=1;j<=N-1;j++)
+        R.add_value(0,j,a[0][j]);
+    for(int i=1;i<=N-1;i++)
+        R.add_value(i,0,0.0);
+    for(int i=1;i<=N-1;i++)
+        L.add_value(i,0,a[i][0]/R.get_value(0,0));
+    for(int j=1;j<=N-1;j++)
+        L.add_value(0,j,0.0);
+    for(int i=1;i<=N-1;i++)
+    {
+        L.add_value(i,i,1.0);
+        R.add_value(i,i,a[i][i]);
+        for(int k=0;k<=i-1;k++)
+            R.add_value(i,i,R.get_value(i,i)-(L.get_value(i,k)*R.get_value(k,i)));
+        for(int j=i+1;j<=N-1;j++)
+        {
+            L.add_value(j,i,a[j][i]);
+            for(int k=0;k<=i-1;k++)
+                L.add_value(j,i,L.get_value(j,i)-(L.get_value(j,k)*R.get_value(k,i)));
+            L.add_value(j,i,L.get_value(j,i)/R.get_value(i,i));
+            R.add_value(j,i,0.0);
+            L.add_value(i,j,0.0);
+            R.add_value(i,j,a[i][j]);
+            for(int k=0;k<=i-1;k++)
+                R.add_value(i,j,R.get_value(i,j)-(L.get_value(i,k)*R.get_value(k,j)));
+        }
+    }
+    
+    return {L,R};
+}
+std::tuple<Matrix,Matrix> Matrix::crout()
+{
+    return crout(this->data);
 }
 // ハウスホルダー変換
 std::tuple<std::vector<std::vector<double>>, std::vector<double>,  std::vector<double>> Matrix::tridiagonalize(std::vector<std::vector<double>> a, std::vector<double> d, std::vector<double> e)

@@ -1,5 +1,7 @@
 # Matrix
 線形代数課題用リポジトリ
+* include Matrix.hppが自作した行列計算ライブラリ
+* src main.cppはプログラムが正しいかを確かめたプログラム，test.cppは実行速度計測用
 ## 環境
 * 0S:windosw11 wsl Ubuntu20.04
 * gccバージョン:gcc version 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.1) 

@@ -4,7 +4,6 @@
 #include <vector>
 #include <tuple>
 #include "../include/Matrix.hpp"
-#include <eigen3/Eigen/Dense>
 #include "../include/matplotlibcpp.h"
 //using namespace Eigen;
 

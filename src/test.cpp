@@ -5,7 +5,6 @@
 #include <tuple>
 #include "../include/Matrix.hpp"
 #include "../include/matplotlibcpp.h"
-//using namespace Eigen;
 
 void showvec(std::vector<double> x)//ベクトル表示
 {

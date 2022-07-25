@@ -31,3 +31,6 @@ sudo apt install python3-matplotlib
 ```bash
 g++ -Wall -std=c++17 src/test.cpp -I /usr/include/python3.8 -lpython3.8 -O3
 ```
+## 実行結果
+![fig1](images/m1000_fig1.png)
+![fig2](images/m1000_fig2.png)

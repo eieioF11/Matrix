@@ -13,3 +13,21 @@ g++ -Wall -std=c++17 src/main.cpp
 ```bash
 ./a.out
 ```
+# Eigenライブラリとの比較
+## wslにEigenのインストール
+```bash
+sudo apt install libeigen3-dev
+```
+matplotlibを使うための環境構築
+```bash
+sudo apt-get install python3.8-dev
+```
+numpyとmatplotlibインストール
+```bash
+sudo apt install python3-numpy
+sudo apt install python3-matplotlib
+```
+## コンパイル
+```bash
+g++ -Wall -std=c++17 src/test.cpp -I /usr/include/python3.8 -lpython3.8 -O3
+```
